@@ -1,0 +1,315 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+  COMPANY
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  ORTHERS
+}
+
+enum EducationalStatus {
+  IN_PROCESS
+  GRADUATED
+}
+
+enum JobLevel {
+  // 0 - 10 months of experience
+  FRESHER
+  // 10 - 36 months of experience
+  JUNIOR
+  // 37 - 60 months of experience
+  SENIOR
+  // > 60 months of experience
+  MANAGER
+}
+
+enum WorkingType {
+  AT_OFFICE
+  REMOTE
+  HYBRID
+}
+
+enum CompanyType {
+  IT_OUTSOURCING
+  IT_PRODUCT
+  IT_SERVICE_AND_CONSULTING
+  NON_IT
+  ORTHERS
+}
+
+model City {
+  city_id String @id @default(uuid())
+  city_name String @unique
+
+  jobPreferences JobPreferencesOnCities[]
+  companiesInfor CompaniesInforOnCities[]
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model User {
+  user_id String @id @default(uuid())
+  email String @unique
+  password_hash String
+  role Role @default(USER)
+  refresh_token String?
+
+  userProfile UserProfile?
+  companyInfor CompanyInfor?
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model Skill {
+  skill_id String @id @default(uuid())
+  skill_name String @unique
+
+  jobs SkillsOnJobs[]
+  userProfiles SkillsOnUserProfiles[]
+  jobPreferences SkillsOnJobPreferences[]
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model UserProfile {
+  userProfile_id String @id @default(uuid())
+  full_name String
+  phone_number String
+  date_of_birth DateTime @db.Date
+  profile_photo_url String?
+  cover_photo_url String?
+  gender Gender?
+  address String?
+  about_me String?
+  cv_url String?
+  cover_letter_url String?
+
+  skills SkillsOnUserProfiles[]
+  educations Education[]
+  workExperiences WorkExperience[]
+  personalProjects PersonalProject[]
+  certificates Certificate[]
+  award Award[]
+  jobPreferences JobPreference[]
+
+  userId String @unique
+  user User @relation(fields: [userId], references: [user_id], onDelete: Cascade)
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model SkillsOnUserProfiles {
+  skillId String
+  skill Skill @relation(fields: [skillId], references: [skill_id], onDelete: Cascade)
+  userProfileId String
+  userProfile UserProfile @relation(fields: [userProfileId], references: [userProfile_id], onDelete: Cascade)
+
+  @@id([skillId, userProfileId])
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model Education {
+  education_id String @id @default(uuid())
+  educational_facility String
+  major String
+  educational_status EducationalStatus
+  from DateTime
+  to DateTime?
+  additional_details String
+
+  userProfileId String
+  userProfile UserProfile @relation(fields: [userProfileId], references: [userProfile_id], onDelete: Cascade)
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model WorkExperience {
+  workExperience_id String @id @default(uuid())
+  job_title String
+  company String
+  from DateTime
+  to DateTime
+  description String?
+  project String?
+
+  userProfileId String
+  userProfile UserProfile @relation(fields: [userProfileId], references: [userProfile_id], onDelete: Cascade)
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model PersonalProject {
+  personalProject_id String @id @default(uuid())
+  personalProject_name String
+  start_date DateTime
+  end_date DateTime
+  description String?
+  project_url String?
+
+  userProfileId String
+  userProfile UserProfile @relation(fields: [userProfileId], references: [userProfile_id], onDelete: Cascade)
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model Certificate {
+  certificate_id String @id @default(uuid())
+  certificate_name String
+  certificate_url String?
+  organization String
+  issue_date DateTime
+  description String?
+
+  userProfileId String
+  userProfile UserProfile @relation(fields: [userProfileId], references: [userProfile_id], onDelete: Cascade)
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model Award {
+  award_id String @id @default(uuid())
+  award_name String
+  award_url String?
+  issue_date DateTime?
+  description String?
+
+  userProfileId String
+  userProfile UserProfile @relation(fields: [userProfileId], references: [userProfile_id], onDelete: Cascade)
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model CompanyInfor {
+  companyInfor_id String @id @default(uuid())
+  profile_photo_url String?
+  cover_photo_url String?
+  company_name String @unique
+  company_location String
+  company_type CompanyType
+  company_size String
+  company_overview String
+  country String
+  working_days String
+  overtime_policy String
+  website_url String
+
+  cities CompaniesInforOnCities[]
+  jobs Job[]
+
+  userId String @unique
+  user User @relation(fields: [userId], references: [user_id], onDelete: Cascade)
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model CompaniesInforOnCities {
+  companyInforId String
+  companyInfor CompanyInfor @relation(fields: [companyInforId], references: [companyInfor_id], onDelete: Cascade)
+  cityId String
+  city City @relation(fields: [cityId], references: [city_id], onDelete: Cascade)
+
+  @@id([companyInforId, cityId])
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model JobPreference {
+  jobPreference_id String @id @default(uuid())
+  job_level JobLevel?
+  current_salary Decimal?
+  expected_salary Decimal?
+  working_type WorkingType?
+  company_type CompanyType?
+
+  skills SkillsOnJobPreferences[]
+  cities JobPreferencesOnCities[]
+
+  userProfileId String
+  userProfile UserProfile @relation(fields: [userProfileId], references: [userProfile_id], onDelete: Cascade)
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model SkillsOnJobPreferences {
+  skillId String
+  skill Skill @relation(fields: [skillId], references: [skill_id], onDelete: Cascade)
+  jobPreferenceId String
+  jobPreference JobPreference @relation(fields: [jobPreferenceId], references: [jobPreference_id], onDelete: Cascade)
+
+  @@id([skillId, jobPreferenceId])
+}
+
+model JobPreferencesOnCities {
+  jobPreferenceId String
+  jobPreference JobPreference @relation(fields: [jobPreferenceId], references: [jobPreference_id], onDelete: Cascade)
+  cityId String
+  city City @relation(fields: [cityId], references: [city_id], onDelete: Cascade)
+
+  @@id([jobPreferenceId, cityId])
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model Job {
+  job_id String @id @default(uuid())
+  title String
+  description String
+  requirements String?
+  benefits String?
+  jobLevels JobLevel?
+  salary_min Decimal?
+  salary_max Decimal?
+  working_type WorkingType
+  
+  skills SkillsOnJobs[]
+  companyInforId String
+  companyInfor CompanyInfor @relation(fields: [companyInforId], references: [companyInfor_id], onDelete: Cascade)
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model SkillsOnJobs {
+  skillId String
+  skill Skill @relation(fields: [skillId], references: [skill_id], onDelete: Cascade)
+  jobId String
+  job Job @relation(fields: [jobId], references: [job_id], onDelete: Cascade)
+
+  @@id([skillId, jobId])
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
