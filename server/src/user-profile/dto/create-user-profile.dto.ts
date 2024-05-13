@@ -1,19 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Gender } from '@prisma/client';
-import {
-  IsDateString,
-  IsEnum,
-  IsNotEmpty,
-  IsString,
-  Length,
-} from 'class-validator';
+import { IsDateString, IsNotEmpty, IsString, Length } from 'class-validator';
 
 export class CreateUserProfileDto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  user_id: string;
-
   @ApiProperty({ minLength: 1, maxLength: 100 })
   @IsString()
   @IsNotEmpty()
@@ -43,7 +32,6 @@ export class CreateUserProfileDto {
     enum: Gender,
     required: false,
   })
-  @IsEnum(Gender)
   gender?: Gender;
 
   @ApiProperty({ required: false })

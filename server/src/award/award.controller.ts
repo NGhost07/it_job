@@ -23,7 +23,7 @@ import {
 import { Award, Role } from '@prisma/client';
 import { CreateAwardDto, UpdateAwardDto } from './dto';
 import { AccessTokenGuard, RolesGuard } from 'src/auth/guards';
-import { Roles } from 'src/auth/decorators';
+import { GetUserId, Roles } from 'src/auth/decorators';
 
 @ApiTags('Awards for user profile')
 @ApiBearerAuth()
@@ -45,8 +45,11 @@ export class AwardController {
   })
   @Roles(Role.ADMIN, Role.USER)
   @Post()
-  async create(@Body() createAwardDto: CreateAwardDto): Promise<Award> {
-    return this.awardService.create(createAwardDto);
+  async create(
+    @GetUserId() user_id: string,
+    @Body() createAwardDto: CreateAwardDto,
+  ): Promise<Award> {
+    return this.awardService.create(user_id, createAwardDto);
   }
 
   @ApiOperation({ summary: 'Get all awards of user profiles' })

@@ -7,13 +7,21 @@ import { CreateAwardDto, UpdateAwardDto } from './dto';
 export class AwardService {
   constructor(private prismaService: PrismaService) {}
 
-  async create(createAwardDto: CreateAwardDto): Promise<Award> {
-    const { userProfileId, award_name, award_url, issue_date, description } =
-      createAwardDto;
+  async create(
+    user_id: string,
+    createAwardDto: CreateAwardDto,
+  ): Promise<Award> {
+    const userProfile = await this.prismaService.userProfile.findUnique({
+      where: { userId: user_id },
+    });
+
+    const { award_name, award_url, issue_date, description } = createAwardDto;
 
     return this.prismaService.award.create({
       data: {
-        userProfile: { connect: { userProfile_id: userProfileId } },
+        userProfile: {
+          connect: { userProfile_id: userProfile.userProfile_id },
+        },
         award_name,
         award_url,
         issue_date: issue_date == null ? issue_date : new Date(issue_date),

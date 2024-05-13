@@ -3,11 +3,6 @@ import { CompanyType } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateCompanyInforDto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  userId: string;
-
   @ApiProperty({ required: false })
   @IsString()
   profile_photo_url?: string;

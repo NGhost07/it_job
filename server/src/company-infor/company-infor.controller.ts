@@ -23,7 +23,7 @@ import {
 import { CompanyInfor, Role } from '@prisma/client';
 import { CreateCompanyInforDto, UpdateCompanyInforDto } from './dto';
 import { AccessTokenGuard, RolesGuard } from 'src/auth/guards';
-import { Roles } from 'src/auth/decorators';
+import { GetUserId, Roles } from 'src/auth/decorators';
 
 @ApiTags('Company Infors')
 @ApiBearerAuth()
@@ -46,9 +46,10 @@ export class CompanyInforController {
   @Roles(Role.ADMIN, Role.COMPANY)
   @Post()
   async create(
+    @GetUserId() user_id: string,
     @Body() createCompanyInforDto: CreateCompanyInforDto,
   ): Promise<CompanyInfor> {
-    return this.companyInforService.create(createCompanyInforDto);
+    return this.companyInforService.create(user_id, createCompanyInforDto);
   }
 
   @ApiOperation({ summary: 'Get all companies infors' })

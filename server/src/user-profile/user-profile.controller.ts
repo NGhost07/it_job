@@ -3,10 +3,11 @@ import {
   Get,
   Post,
   Body,
-  Param,
   Patch,
   Delete,
   UseGuards,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Role, UserProfile } from '@prisma/client';
 import {
@@ -22,8 +23,11 @@ import {
 } from '@nestjs/swagger';
 import { CreateUserProfileDto, UpdateUserProfileDto } from './dto';
 import { AccessTokenGuard, RolesGuard } from 'src/auth/guards';
-import { Roles } from 'src/auth/decorators';
+import { GetUserId, Roles } from 'src/auth/decorators';
 import { UserProfileService } from './user-profile.service';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { extname } from 'path';
+import { storageConfig } from 'helpers/config';
 
 @ApiTags('User Profiles')
 @ApiBearerAuth()
@@ -46,66 +50,33 @@ export class UserProfileController {
   @Roles(Role.ADMIN, Role.USER)
   @Post()
   async create(
+    @GetUserId() user_id: string,
     @Body() createUserProfileDto: CreateUserProfileDto,
   ): Promise<UserProfile> {
-    return this.userProfileService.create(createUserProfileDto);
+    return this.userProfileService.create(user_id, createUserProfileDto);
   }
 
   @ApiOperation({ summary: 'Get all user profile' })
   @ApiOkResponse({ description: 'Ok' })
   @ApiForbiddenResponse({ description: 'Forbidden: Requires admin rights' })
-  @Roles(Role.ADMIN, Role.USER)
+  @Roles(Role.ADMIN)
   @Get()
   async findAll(): Promise<UserProfile[]> {
     return this.userProfileService.findAll();
   }
 
-  @ApiOperation({ summary: 'Get user profile by id' })
+  @ApiOperation({ summary: 'Get user profile' })
   @ApiOkResponse({ description: 'Ok' })
-  @ApiInternalServerErrorResponse({ description: 'Invalid user profile id' })
+  @Get('user')
   @ApiForbiddenResponse({
     description: 'Forbidden: Requires admin or user rights',
   })
   @Roles(Role.ADMIN, Role.USER)
-  @Get(':id')
-  async findOneById(@Param('id') id: string): Promise<UserProfile> {
-    return this.userProfileService.findOneById(id);
-  }
-
-  @ApiOperation({ summary: 'Get user profile by user id' })
-  @ApiOkResponse({ description: 'Ok' })
-  @ApiInternalServerErrorResponse({ description: 'Invalid user id' })
-  @Get('user/:userId')
-  @ApiForbiddenResponse({
-    description: 'Forbidden: Requires admin or user rights',
-  })
-  @Roles(Role.ADMIN, Role.USER)
-  async findOneByUserId(
-    @Param('user_id') user_id: string,
-  ): Promise<UserProfile> {
+  async findOneByUserId(@GetUserId() user_id: string): Promise<UserProfile> {
     return this.userProfileService.findOneByUserId(user_id);
   }
 
-  @ApiOperation({ summary: 'Update user profile by id' })
-  @ApiOkResponse({ description: 'Ok' })
-  @ApiInternalServerErrorResponse({ description: 'Invalid id' })
-  @ApiBadRequestResponse({
-    description: 'Invalid user profile',
-    type: UpdateUserProfileDto,
-  })
-  @ApiForbiddenResponse({
-    description: 'Forbidden: Requires admin or user rights',
-  })
-  @Roles(Role.ADMIN, Role.USER)
-  @Patch(':id')
-  async updateById(
-    @Param('id') id: string,
-    @Body() updateUserProfileDto: UpdateUserProfileDto,
-  ): Promise<UserProfile> {
-    return this.userProfileService.updateById(id, updateUserProfileDto);
-  }
-
-  @ApiOperation({ summary: 'Update user profile by user id' })
+  @ApiOperation({ summary: 'Update user profile' })
   @ApiOkResponse({ description: 'Ok' })
   @ApiInternalServerErrorResponse({ description: 'Invalid user id' })
   @ApiBadRequestResponse({
@@ -116,9 +87,9 @@ export class UserProfileController {
     description: 'Forbidden: Requires admin or user rights',
   })
   @Roles(Role.ADMIN, Role.USER)
-  @Patch('user/:user_id')
+  @Patch('user')
   async updateByUserId(
-    @Param('user_id') user_id: string,
+    @GetUserId() user_id: string,
     @Body() updateUserProfileDto: UpdateUserProfileDto,
   ): Promise<UserProfile> {
     return this.userProfileService.updateByUserId(
@@ -127,19 +98,7 @@ export class UserProfileController {
     );
   }
 
-  @ApiOperation({ summary: 'Delete user profile by id' })
-  @ApiOkResponse({ description: 'Ok' })
-  @ApiInternalServerErrorResponse({ description: 'Invalid id' })
-  @ApiForbiddenResponse({
-    description: 'Forbidden: Requires admin or user rights',
-  })
-  @Roles(Role.ADMIN, Role.USER)
-  @Delete(':id')
-  async removeById(@Param('id') id: string): Promise<UserProfile> {
-    return this.userProfileService.removeById(id);
-  }
-
-  @ApiOperation({ summary: 'Delete user profile by user id' })
+  @ApiOperation({ summary: 'Delete user profile' })
   @ApiOkResponse({ description: 'Ok' })
   @ApiInternalServerErrorResponse({ description: 'Invalid user id' })
   @ApiForbiddenResponse({
@@ -147,9 +106,40 @@ export class UserProfileController {
   })
   @Roles(Role.ADMIN, Role.USER)
   @Delete('user/:user_id')
-  async removeByUserId(
-    @Param('user_id') user_id: string,
-  ): Promise<UserProfile> {
+  async removeByUserId(@GetUserId() user_id: string): Promise<UserProfile> {
     return this.userProfileService.removeByUserId(user_id);
+  }
+
+  @Patch('update-avatar')
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: storageConfig('avatar'),
+      fileFilter: (req, file, cb) => {
+        const ext = extname(file.originalname);
+        const allowedExtArr = ['.jpg', '.png', '.jpeg'];
+        if (!allowedExtArr.includes(ext)) {
+          req.fileValidationError = `Wrong extension type. Accepted file ext are: ${allowedExtArr.toString()}`;
+          cb(null, false);
+        } else {
+          const fileSize = parseInt(req.headers['content-length']);
+          if (fileSize > 1024 * 1024 * 5) {
+            req.fileValidationError =
+              'File size is too large. Accepted file size is less than 5 MB';
+            cb(null, false);
+          } else {
+            cb(null, true);
+          }
+        }
+      },
+    }),
+  )
+  updateAvatar(
+    @GetUserId() user_id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.userProfileService.updateAvatar(
+      user_id,
+      file.destination + '/' + file.filename,
+    );
   }
 }

@@ -9,8 +9,11 @@ import { ValidationPipe } from '@nestjs/common';
 dotenv.config();
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    cors: true,
+  });
   app.useGlobalPipes(new ValidationPipe());
+  app.enableCors();
 
   const config = new DocumentBuilder()
     .setTitle('IT Job')

@@ -8,10 +8,10 @@ export class CompanyInforService {
   constructor(private prismaService: PrismaService) {}
 
   async create(
+    user_id: string,
     createCompanyInforDto: CreateCompanyInforDto,
   ): Promise<CompanyInfor> {
     const {
-      userId,
       profile_photo_url,
       cover_photo_url,
       company_name,
@@ -28,7 +28,7 @@ export class CompanyInforService {
     return this.prismaService.companyInfor.create({
       data: {
         user: {
-          connect: { user_id: userId },
+          connect: { user_id: user_id },
         },
         profile_photo_url,
         cover_photo_url,

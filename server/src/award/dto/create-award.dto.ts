@@ -5,11 +5,6 @@ export class CreateAwardDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  userProfileId: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
   award_name: string;
 
   @ApiProperty({ required: false })

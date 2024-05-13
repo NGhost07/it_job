@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -8,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Tokens } from './types';
-import { SigninUserDto, SignupUserDto } from './dto';
+import { SigninUserDto, SignupUserDto, UserDto } from './dto';
 import {
   ApiForbiddenResponse,
   ApiOkResponse,
@@ -64,5 +65,14 @@ export class AuthController {
     @GetUser('refreshToken') refreshToken: string,
   ): Promise<Tokens> {
     return this.authService.refreshToken(user_id, refreshToken);
+  }
+
+  @ApiOperation({ summary: 'Get User' })
+  @ApiOkResponse({ description: 'Successfully!' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized!' })
+  @UseGuards(AccessTokenGuard)
+  @Get('user')
+  async getUset(@GetUserId() user_id: string): Promise<UserDto> {
+    return this.authService.getUser(user_id);
   }
 }

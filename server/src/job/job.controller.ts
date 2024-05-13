@@ -26,9 +26,6 @@ import { AccessTokenGuard, RolesGuard } from 'src/auth/guards';
 import { Roles } from 'src/auth/decorators';
 
 @ApiTags('Jobs')
-@ApiBearerAuth()
-@ApiUnauthorizedResponse({ description: 'Unauthorized: Login first!' })
-@UseGuards(AccessTokenGuard, RolesGuard)
 @Controller('job')
 export class JobController {
   constructor(private readonly jobService: JobService) {}
@@ -43,6 +40,9 @@ export class JobController {
   @ApiForbiddenResponse({
     description: 'Forbidden: Requires admin or company rights',
   })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized: Login first!' })
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.COMPANY)
   @Post()
   async create(@Body() createJobDto: CreateJobDto): Promise<Job> {
@@ -52,7 +52,6 @@ export class JobController {
   @ApiOperation({ summary: 'Get all jobs' })
   @ApiOkResponse({ description: 'Ok' })
   @ApiForbiddenResponse({ description: 'Forbidden: Requires admin rights' })
-  @Roles(Role.ADMIN, Role.COMPANY)
   @Get()
   async findAll(): Promise<Job[]> {
     return this.jobService.findAll();
@@ -86,6 +85,9 @@ export class JobController {
   @ApiForbiddenResponse({
     description: 'Forbidden: Requires admin or company rights',
   })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized: Login first!' })
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.COMPANY)
   @Patch(':id')
   async update(
@@ -101,9 +103,18 @@ export class JobController {
   @ApiForbiddenResponse({
     description: 'Forbidden: Requires admin or company rights',
   })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized: Login first!' })
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.COMPANY)
   @Delete(':id')
   async remove(@Param('id') id: string): Promise<Job> {
     return this.jobService.remove(id);
+  }
+
+  @ApiOperation({ summary: 'Get job by title' })
+  @Get('title/:title')
+  async findByName(@Param('title') title?: string): Promise<Job[]> {
+    return await this.jobService.findByTitle(title);
   }
 }

@@ -61,4 +61,31 @@ export class JobService {
   async remove(id: string): Promise<Job> {
     return this.prismaService.job.delete({ where: { job_id: id } });
   }
+
+  async findByTitle(title: string): Promise<Job[]> {
+    return await this.prismaService.job.findMany({
+      where: {
+        title: {
+          contains: title,
+        },
+      },
+    });
+  }
+
+  async findJobsUserApplied(user_id: string): Promise<Job[]> {
+    const userProfile = await this.prismaService.userProfile.findUnique({
+      where: { userId: user_id },
+    });
+
+    const jobs = await this.prismaService.job.findMany({
+      where: {
+        UserProfiles: {
+          some: { userProfileId: userProfile.userProfile_id },
+        },
+      },
+    });
+
+    console.log(user_id);
+    return jobs;
+  }
 }
